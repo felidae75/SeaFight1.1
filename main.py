@@ -88,26 +88,26 @@ class Ship:  # Класс корабля
         return dots_ship_list
 
     @property
-    def ship_contur(self):    # Координаты вокруг корабля
+    def ship_contour(self):    # Координаты вокруг корабля
         near_ship = [
             (-1, -1), (-1, 0), (-1, 1),
             (0, -1),  (0, 1),
             (1, -1), (1, 0), (1, 1)
         ]
         # Список "сдвигов", чтобы определить координаты
-        contur = []
+        contour = []
         for coord in self.dots_ship:
             for d_x, d_y in near_ship:
                 cur = Dots(coord.x + d_x, coord.y + d_y)
                 if cur not in self.dots_ship and cur.x >= 0 and cur.y >= 0:
-                    contur.append(cur)
+                    contour.append(cur)
         # print(contur)
         # field = [["_"]*9 for _ in range(9)]
         # for coord in contur:
         #     field[coord.x][coord.y] = '+'
         # for i in range(len((field))):
         #     print(*field[i])
-        return contur
+        return contour
 
 
 class ShipsList:  # Класс для списка кораблей
@@ -116,17 +116,17 @@ class ShipsList:  # Класс для списка кораблей
         self.size = size                           # Размер игрового поля
 
     def try_make_ships_list(self):
-        all_ships_list = []
-        all_dots_ships = []
-        all_contur_dots = []
+        ships_list = []
+        dots_all_ships = []
+        contours_list = []
         # Список кораблей (класс Ship), список координат кораблей, список контуров кораблей
 
         def try_add_ship(dot_ship):  # Проверка, не задевает ли координата корабля другие корабли и контуры
-            if dot_ship in all_dots_ships:
+            if dot_ship in dots_all_ships:
                 # print("ship")
                 raise BoardWrongShipException
-            if dot_ship in all_contur_dots:
-                # print('contur')
+            if dot_ship in contours_list:
+                # print('contour')
                 raise BoardWrongShipException
 
         count = 0  # Счётчик для неудачных попыток
@@ -134,16 +134,16 @@ class ShipsList:  # Класс для списка кораблей
         for len_ship in self.ships_lens_list:
             while True:
                 ship = Ship(len_ship=len_ship, bow=Dots(randint(0, self.size-1), randint(0, self.size-1)), direct=randint(0, 1))
-                contur_dots = ship.ship_contur  # Координаты вокруг корабля
+                contour = ship.ship_contour  # Координаты вокруг корабля
                 try:
                     for dot in ship.dots_ship:
                         # Проверка, что координата внутри игрового поля
                         if not dot.is_dot_in_area(size=self.size):
                             raise BoardWrongShipException
                         try_add_ship(dot)  # Проверка, что корабли не задевают друг друга
-                        all_dots_ships.append(dot)
-                        all_contur_dots += contur_dots
-                    all_ships_list.append(ship)
+                        dots_all_ships += [dot]
+                        contours_list += contour
+                    ships_list.append(ship)
                     count -= 1
                     break
                 except BoardException:
@@ -151,20 +151,20 @@ class ShipsList:  # Класс для списка кораблей
                     if count > 100:
                         return None
                     continue
-        return all_ships_list
+        return ships_list
 
     @property
     def random_add_ships(self):
         # Функция, чтобы перезапускать расстановку кораблей
         # Да, такой декоратор. Но мне влом ставить скобки к ней, она ж всё равно работает и как свойство
-        all_ships_list = None
-        while all_ships_list is None:
-            all_ships_list = self.try_make_ships_list()
+        ships_list = None
         dots_all_ships = []
-        for ship in all_ships_list:
+        while ships_list is None:
+            ships_list = self.try_make_ships_list()
+        for ship in ships_list:
             dots_all_ships += ship.dots_ship
         # print(dots_all_ships)
-        return all_ships_list, dots_all_ships
+        return ships_list, dots_all_ships
         # Список кораблей класса Ship, список координат кораблей отдельно от класса
 
 
@@ -213,8 +213,8 @@ class Board:        # Класс игровой доски
             if self.field[dot.x][dot.y] == "_":  # Это if для итогов игры, чтобы показать, где неподбитые
                 self.field[dot.x][dot.y] = "0"
 
-    def make_contur_visible(self, ship):
-        for dot in ship.ship_contur:
+    def make_contour_visible(self, ship):
+        for dot in ship.ship_contour:
             if dot.x < self.size and dot.y < self.size:
                 self.shot_dots.append(dot)
                 self.field[dot.x][dot.y] = "+"
@@ -233,7 +233,7 @@ class Board:        # Класс игровой доски
                         print("\nКорабль подбит\n")
                         return True
                     else:
-                        self.make_contur_visible(ship)
+                        self.make_contour_visible(ship)
                         self.count += 1
                         print("\nКорабль потоплен\n")
                         return False
@@ -324,7 +324,7 @@ class AI(Player):    # Клас бота
         if self.enemy.get_status(shot) == 1:   # Если попал, координаты выстрела запоминаются
             self.list_shot.append(shot)
 
-        print(f'\nХод компьютера: {self.simbols_func(shot.y)} {shot.x + 1}')
+        print(f'Ход компьютера: {self.simbols_func(shot.y)} {shot.x + 1}')
         return shot
 
     def ai_want_win(self, list_shot):
@@ -361,7 +361,7 @@ class User(Player):                 # Класс пользователя
         simbols = 'a b c d e f g h i j k l m n o p q r s t u v w x y z'
         simbols = simbols.split()
         while True:  # Запрос и проверка координат на вменяемость
-            cords = input("\nВведите две координаты, начиная с латинской буквы, через пробел: ").lower()
+            cords = input("Введите две координаты, начиная с латинской буквы, через пробел: ").lower()
             cords = cords.split()
             # print(cords)
             if len(cords) != 2:
@@ -447,21 +447,21 @@ class Game:                  # Класс игры
         count = 0           # Счётчик чёт-нечёт для очерёдности ходов
         while True:
             if count % 2 == 0:
-                print(f"\nСтатистика компьютера:\n{self.ai.board.stat()}\n")
+                print(f"Статистика компьютера:\n{self.ai.board.stat()}\n")
                 self.print_arena()
-                print("\nХодит пользователь")
+                print("Ходит пользователь\n")
                 repeat = self.us.move()
                 print('*'*20, "\n")
             else:
-                print("\nХодит компьютер")
+                print("Ходит компьютер\n")
                 repeat = self.ai.move()
-                print(f"\nСтатистика пользователя:\n{self.us.board.stat()}\n")
+                print(f"Статистика пользователя:\n{self.us.board.stat()}\n")
                 self.print_arena()
                 print('*'*20, "\n")
 
             if repeat:
                 count -= 1
-                print("Повторный ход")
+                print("Повторный ход\n")
 
             if self.ai.board.defeat():
                 print(f"\nСтатистика компьютера:\n{self.ai.board.stat()}\n")
