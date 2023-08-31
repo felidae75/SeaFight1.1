@@ -186,7 +186,7 @@ class Board:        # Класс игровой доски
 
         self.field = [["_"] * self.size for _ in range(self.size)]
         # Список списков для игрового поля
-        self.count = 0    # Счётчик потопленных кораблей для красивой статистики
+        self.count_ships = 0    # Счётчик потопленных кораблей для красивой статистики
 
     def __str__(self):     # Печать игрового поля
         print_field = " "
@@ -234,7 +234,7 @@ class Board:        # Класс игровой доски
                         return True
                     else:
                         self.make_contour_visible(ship)
-                        self.count += 1
+                        self.count_ships += 1
                         print("\nКорабль потоплен\n")
                         return False
         elif self.get_status(dot) == -1:     # Мимо
@@ -252,7 +252,7 @@ class Board:        # Класс игровой доски
 
     def stat(self):          # Большой нудный метод для красивой статистики
         stat = ''            # Запись статистики сразу в строку
-        count = 0
+        count = 0            # Счётчик количества кораблей
         for i in range(1, len(self.lens_ships)):
             if self.lens_ships[i] == self.lens_ships[i-1]:
                 count += 1
@@ -262,7 +262,7 @@ class Board:        # Класс игровой доски
             elif self.lens_ships[i] != self.lens_ships[i-1]:
                 stat += f'{self.lens_ships[i-1]}-палубных: {count+1} целей/цели\n'
                 count = 0
-        return f"\nКоличество кораблей на поле:\n{stat}\nИз них потоплено: {self.count}"
+        return f"\nКоличество кораблей на поле:\n{stat}\nИз них потоплено: {self.count_ships}"
 
 
 # lens_ship = [3, 2, 2, 1]
