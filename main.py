@@ -31,8 +31,9 @@ class Dots:  # Класс ячеек
         self.x = x
         self.y = y
 
-    def __eq__(self, other):  # Эта фигня для сравнения ячеек без обращения к координатам
+    def __eq__(self, other):     # Эта фигня для сравнения ячеек без обращения к координатам
         return self.x == other.x and self.y == other.y
+
     # def status_square(self, ships_dots, shot_dots):
     #     if Dots(self.x, self.y) in ships_dots:
     #         # print(self.x, self.y)
@@ -70,7 +71,7 @@ class Ship:  # Класс корабля
         self.len_ship = len_ship     # Длина корабля
         self.bow = bow               # Координаты носа корабля
         self.direct = direct         # Направление корабля. Задаётся параметром 1 или 0
-        self.lives = self.dots_ship  # Жизни корабля
+        self.lives = self.dots_ship  # Жизни корабля в виде клеток
 
     @property
     def dots_ship(self):  # Список координат корабля
@@ -150,21 +151,6 @@ class ShipsList:  # Класс для списка кораблей
                     if count > 100:
                         return None
                     continue
-        # print(all_ships_list)
-        # print(all_dots_ships)
-        # print(all_contur_dots)
-        #
-        # field = [["_"] * self.size for _ in range(self.size)]
-        # for coord in all_dots_ships:
-        #     field[coord.x][coord.y] = '+'
-        # for i in range(len(field)):
-        #     print(*field[i])
-        #
-        # field = [["_"] * (self.size+2) for _ in range(self.size+2)]
-        # for coord in all_contur_dots:
-        #     field[coord.x][coord.y] = '0'
-        # for i in range(len(field)):
-        #     print(*field[i])
         return all_ships_list
 
     @property
@@ -174,35 +160,32 @@ class ShipsList:  # Класс для списка кораблей
         all_ships_list = None
         while all_ships_list is None:
             all_ships_list = self.try_make_ships_list()
-        # print(all_ships_list)
-        return all_ships_list
+        dots_all_ships = []
+        for ship in all_ships_list:
+            dots_all_ships += ship.dots_ship
+        # print(dots_all_ships)
+        return all_ships_list, dots_all_ships
+        # Список кораблей класса Ship, список координат кораблей отдельно от класса
 
-    # @property
-    # def all_dots_ship(self):
-    #     all_dots_ship = []
-    #     for ship in self.try_make_ships_list():
-    #         all_dots_ship += ship.dots_ship
-    #     return all_dots_ship
-    # Хотела вытаскивать координаты кораблей прямо в классе. Не сработало
 
-# list1 = [3, 2, 1, 1]
+# list1 = [2, 1, 1]
 # ships = ShipsList(ships_lens_list=list1)
+# ships.random_add_ships
+# print(ships)
 
 
-class Board:     # Класс игровой доски
+class Board:        # Класс игровой доски
     def __init__(self, lens_ships, size=6):
         self.size = size                 # Размер доски
         self.lens_ships = lens_ships     # Список длин кораблей
 
-        self.all_ships_list = ShipsList(size=self.size, ships_lens_list=lens_ships).random_add_ships
-        # Список кораблей, уже красиво расставленных
+        self.ships_list, self.dots_all_ships = ShipsList(size=self.size, ships_lens_list=lens_ships).random_add_ships
+        # Список кораблей, уже красиво расставленных, и их координат
 
-        self.all_dots_ships = self.get_dots_ships   # Список координат кораблей, добытый непотребным для СОЛИД путём
-        self.shot_dots = []                         # Список для отстрелянных клеток
+        self.shot_dots = []  # Список для отстрелянных клеток
 
         self.field = [["_"] * self.size for _ in range(self.size)]
         # Список списков для игрового поля
-
         self.count = 0    # Счётчик потопленных кораблей для красивой статистики
 
     def __str__(self):     # Печать игрового поля
@@ -216,17 +199,8 @@ class Board:     # Класс игровой доски
             print_field += f"\n {'%2d' % (i + 1)}   | " + " | ".join(self.field[i]) + " |    "
         return print_field
 
-    @property
-    def get_dots_ships(self):
-        # Чит, чтобы получить координаты всех кораблей из списка кораблей
-        # Другие варианты не сработали, но этот костыль хотя бы мелкий
-        dots_ship = []
-        for ship in self.all_ships_list:
-            dots_ship += ship.dots_ship
-        return dots_ship
-
     def get_status(self, dot):          # Быстрый статус точки
-        if dot in self.all_dots_ships:
+        if dot in self.dots_all_ships:
             return 1
         elif dot in self.shot_dots:
             return False
@@ -235,7 +209,7 @@ class Board:     # Класс игровой доски
         # 1 - попал, -1 - мимо, False - сенсей, не туда
 
     def add_ship(self):               # Печать корабля на поле
-        for dot in self.all_dots_ships:
+        for dot in self.dots_all_ships:
             if self.field[dot.x][dot.y] == "_":  # Это if для итогов игры, чтобы показать, где неподбитые
                 self.field[dot.x][dot.y] = "0"
 
@@ -249,9 +223,9 @@ class Board:     # Класс игровой доски
         if self.get_status(dot) == 1:        # Попал
             self.field[dot.x][dot.y] = "X"
             self.shot_dots.append(dot)
-            self.all_dots_ships.remove(dot)
-            for ship in self.all_ships_list:
-                if dot in ship.lives:
+            self.dots_all_ships.remove(dot)
+            for ship in self.ships_list:
+                if dot in ship.lives:       # Убираем жизни-клетки
                     ship.lives.remove(dot)
                     # print(ship.lives)
                     # print(ship.dots_ship)
@@ -272,32 +246,24 @@ class Board:     # Класс игровой доски
             # print(self.shot_dots)
             return False
 
-    def defeat(self):   # Поражение. Я - Кэп
-        if not self.all_dots_ships:
+    def defeat(self):        # Поражение. Я - Кэп
+        if not self.dots_all_ships:
             return True
 
-    def stat(self):          # Для красивой статистики
-        stat_ship_list = ''  # Запись количества кораблей сразу в строку
-        lens_ships = self.lens_ships
+    def stat(self):          # Большой нудный метод для красивой статистики
+        stat = ''            # Запись статистики сразу в строку
         count = 0
-        for i in range(1, len(lens_ships)):
-            if lens_ships[i] == lens_ships[i-1]:
+        for i in range(1, len(self.lens_ships)):
+            if self.lens_ships[i] == self.lens_ships[i-1]:
                 count += 1
-                if lens_ships[i] == 1:
-                    stat_ship_list += f"{lens_ships[i]}-палубных: {len(lens_ships[i-1:])} цели\n"
+                if self.lens_ships[i] == 1:
+                    stat += f"{self.lens_ships[i]}-палубных: {len(self.lens_ships[i-1:])} цели\n"
                     break
-            elif lens_ships[i] != lens_ships[i-1]:
-                stat_ship_list += f'{lens_ships[i-1]}-палубных: {count+1} целей/цели\n'
+            elif self.lens_ships[i] != self.lens_ships[i-1]:
+                stat += f'{self.lens_ships[i-1]}-палубных: {count+1} целей/цели\n'
                 count = 0
-        return f"\nКоличество кораблей на поле:\n{stat_ship_list}\nИз них потоплено: {self.count}"
+        return f"\nКоличество кораблей на поле:\n{stat}\nИз них потоплено: {self.count}"
 
-    # def clean_board(self):
-    #     self.all_ships_list.clear()
-    #     self.all_dots_ships.clear()
-    #     self.shot_dots.clear()
-    #     self.field = [["_"] * self.size for _ in range(self.size)]
-    #
-    # Не пригодилось
 
 # lens_ship = [3, 2, 2, 1]
 # board = Board(lens_ship)
@@ -311,7 +277,7 @@ class Board:     # Класс игровой доски
 # Божечки, оно работает так, как мне надо
 
 
-class Player:   # Первому игроку приготовиться. Объявлен класс игрока
+class Player:               # Первому игроку приготовиться. Объявлен класс игрока
     def __init__(self, board, enemy, size=6):
         self.size = size    # Размер игрового поля
         self.board = board  # Своя доска
@@ -332,7 +298,7 @@ class Player:   # Первому игроку приготовиться. Объ
                 print(e)
 
 
-class AI(Player):  # Клас бота
+class AI(Player):    # Клас бота
     list_shot = []   # Список попаданий для поиска соседних палуб
 
     @staticmethod
@@ -464,17 +430,16 @@ class Game:                  # Класс игры
             board.add_ship()
         return board
 
-    def print_arena(self):
-        # Печать игровых полей в виде таблицы. Используется модуль с готовым шаблоном
+    def print_arena(self):     # Печать игровых полей в виде таблицы. Используется модуль prettytable
         th = ["Доска компьютера:", "Доска пользователя:"]
-        td = ["", "", self.ai.board, self.us.board, "", ""]
+        td = ["", "", self.ai.board, self.us.board, "", ""]  # Распределяется по количеству колонок в th
         columns = len(th)
         table = PrettyTable(th)
         td_data = td[:]
         while td_data:
             table.add_row(td_data[:columns])
             td_data = td_data[columns:]
-        print(table)
+        print(table, "\n")
 
     def loop_game(self):        # Игровой процесс
         print(f'На поле по {len(self.lens_ship)} кораблей\n')
@@ -486,25 +451,29 @@ class Game:                  # Класс игры
                 self.print_arena()
                 print("\nХодит пользователь")
                 repeat = self.us.move()
-                print('*'*10)
+                print('*'*20, "\n")
             else:
                 print("\nХодит компьютер")
                 repeat = self.ai.move()
-                self.print_arena()
                 print(f"\nСтатистика пользователя:\n{self.us.board.stat()}\n")
-                print('*'*10, "\n")
+                self.print_arena()
+                print('*'*20, "\n")
 
             if repeat:
                 count -= 1
                 print("Повторный ход")
 
             if self.ai.board.defeat():
+                print(f"\nСтатистика компьютера:\n{self.ai.board.stat()}\n")
+                print(f"\nСтатистика пользователя:\n{self.us.board.stat()}\n")
                 self.print_arena()
                 print("\nПользователь выиграл\n")
                 break
 
             if self.us.board.defeat():
-                self.ai.board.add_ship()     # Показать оставшиеся наплаву корабли
+                print(f"\nСтатистика компьютера:\n{self.ai.board.stat()}\n")
+                print(f"\nСтатистика пользователя:\n{self.us.board.stat()}\n")
+                self.ai.board.add_ship()     # add_ship - Показать оставшиеся у бота корабли
                 self.print_arena()
                 print("\nКомпьютер выиграл\n")
                 break
