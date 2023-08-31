@@ -1,7 +1,7 @@
 import random
 from random import randint
 import prettytable
-from prettytable import PrettyTable
+from prettytable import PrettyTable  # Модуль таблиц. Чтобы игровые поля стояли рядом
 
 
 # Классы исключений
